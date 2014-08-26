@@ -1,0 +1,6 @@
+#!/bin/bash
+
+PID=`cat $OPENSHIFT_RUBY_LOG_DIR/server.pid`
+if [ `ps --pid $PID | wc -l` -gt 1 ]; then
+        kill $PID
+fi
