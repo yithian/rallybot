@@ -72,8 +72,8 @@ def connect_rally(nick, &block)
   config = {
     base_url: 'https://rally1.rallydev.com/slm',
     api_key: deets[:key],
-    workspace: 'Red Hat Workspace',
-    project: 'Inception',
+    workspace: ENV['RALLY_BOT_WORKSPACE'],
+    project: ENV['RALLY_BOT_PROJECT'],
     headers: headers = RallyAPI::CustomHttpHeader.new({vendor: 'Brofaces', name: 'rallybot irc bot', version: '1.0'})
   }
 
