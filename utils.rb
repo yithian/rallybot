@@ -6,9 +6,8 @@ include Mongo
 $login_collection = 'users'
 
 def usage(msg)
-  msg.reply 'stories <user> - list user stories assigned to user'
-  msg.reply 'tasks <user> - list tasks assigned to user'
-  msg.reply 'task <id> update name <...> - change the name of a task'
+  msg.reply 'list [stories|tasks|defects] <user> - list stuff assigned to user'
+  msg.reply '[story|task|defect] <id> update name <...> - change the name of a task'
   msg.reply 'task <id> hours <number> - add hours worked on a task'
   msg.reply "register - create an api key for use with #{ENV['RALLY_BOT_NAME']}"
   msg.reply "confirm <email> <api_key> - store your api key for use with #{ENV['RALLY_BOT_NAME']}"
@@ -69,7 +68,7 @@ end
 
 # provide a connection to rally via a stored api key
 def connect_rally(nick, &block)
-  deets = identify(parse_nick(nick))
+  deets = identify(nick)
 
   config = {
     base_url: 'https://rally1.rallydev.com/slm',

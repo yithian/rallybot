@@ -6,6 +6,8 @@ require 'cinch'
 require 'rally_api'
 require_relative './utils.rb'
 
+$items = {stories: :story, tasks: :task, defects: :defect}
+
 bot = Cinch::Bot.new do
   configure do |c|
     # get some basic defaults
@@ -29,93 +31,104 @@ bot = Cinch::Bot.new do
   end
 
   on :private do |m|
+    username = parse_nick(m.user.nick)
+
     case m.message
-    when /^stories \w+/
-      username = m.message.match(/^stories (\w+)/)[1]
+    when /^list \w+ \w+/
+      match = m.message.match(/^list (\w+) (\w+@\w+\.\w+)/)
+      type_plural = match[1].to_sym
+      items_for = match[2]
       id_length = 1
 
       # make sure everything is ok before doing anything
+      unless $items.include?(type_plural)
+        m.reply "I don't know what #{type_plural} are..."
+        next
+      end
+      type_single = $items[type_plural]
+
       unless registered_nicks.include?(username)
         m.reply "User '#{username}' isn't registered with me :("
         next
       end
 
-      rally = connect_rally(m.user.nick)
+      # query rally
+      rally = connect_rally(username)
       r = rally.find do |q|
-        q.type = 'story'
+        q.type = type_single
         q.fetch = 'FormattedID,Name'
         q.order = 'FormattedID Asc'
-        q.query_string = "(Owner.Name = \"#{identify(m.user.nick)[:email]}\")"
+        case type_single
+        when :task
+          q.query_string = "((Owner.Name = #{items_for}) and (State < Completed))"
+        when :story
+          q.query_string = "((Owner.Name = #{items_for}) and (ScheduleState < Completed))"
+        when :defect
+          q.query_string = "((Owner.Name = #{items_for}) and (State < Closed))"
+        end
       end
 
       if r.empty?
-        m.reply "User \"#{username}\" has no stories assigned."
+        m.reply "User \"#{items_for}\" has no #{type_plural} assigned."
         next
       end
 
-      r.each { |story| id_length = story.FormattedID.length if story.FormattedID.length > id_length }
-      r.each do |story|
-        m.reply "#{story.FormattedID.rjust(id_length)} : #{story.Name}"
-      end
-    when /^tasks \w+/
-      username = m.message.match(/^tasks (\w+)/)[1]
-      id_length = 1
-
-      # make sure everything is ok before doing anything
-      unless registered_nicks.include?(username)
-        m.reply "User '#{username}' isn't registered with me :("
-        next
-      end
-
-      rally = connect_rally(m.user.nick)
-      r = rally.find do |q|
-        q.type = 'task'
-        q.fetch = 'FormattedID,Name'
-        q.order = 'FormattedID Asc'
-        q.query_string = "((Owner.Name = \"#{identify(m.user.nick)[:email]}\") and (State != \"Completed\"))"
-      end
-
-      if r.empty?
-        m.reply "User \"#{username}\" has no tasks assigned."
-        next
-      end
-
-      r.each { |task| id_length = task.FormattedID.length if task.FormattedID.length > id_length }
-      r.each do |task|
-        m.reply "#{task.FormattedID.rjust(id_length)} : #{task.Name}"
-      end
-    when /^task \w+ update name/
-      match = m.message.match(/^task (\w+) update name (.*)/)
-      task = match[1]
+      # reply with the user's items, if there are any
+      r.each { |thing| id_length = thing.FormattedID.length if thing.FormattedID.length > id_length }
+      r.each { |thing| m.reply "#{thing.FormattedID.rjust(id_length)} : #{thing.Name}" }
+    when /^\w+ \w+ update name/
+      match = m.message.match(/^(\w+) (\w+) update name (.*)/)
+      type_single = match[1].to_sym
+      item = match[2]
       fields = {}
-      fields[:Name] = match[2]
+      fields[:Name] = match[3]
 
-      rally = connect_rally(m.user.nick)
-      updated_task = rally.update('task', "FormattedID|#{task}", fields)
+      # make sure everything is ok before doing anything
+      unless $items.has_value?(type_single)
+        m.reply "I don't know what a #{type_single} is..."
+        next
+      end
 
-      m.reply "#{task} is now named #{updated_task.Name}"
+      unless registered_nicks.include?(username)
+        m.reply "User '#{username}' isn't registered with me :("
+        next
+      end
+
+      # update rally
+      rally = connect_rally(username)
+      updated_item = rally.update(type_single, "FormattedID|#{item}", fields)
+
+      # reply back with success
+      m.reply "#{item} is now named #{updated_item.Name}"
     when /^task \w+ hours/
       match = m.message.match(/^task (\w+) hours (\d+)/)
       task = match[1]
       fields = {}
       fields[:Actuals] = match[2].to_i
 
-      rally = connect_rally(m.user.nick)
+      # make sure everything is ok before doing anything
+      unless registered_nicks.include?(username)
+        m.reply "User '#{username}' isn't registered with me :("
+        next
+      end
+
+      # update rally
+      rally = connect_rally(username)
       old_hours = rally.read('task', "FormattedID|#{task}").Actuals
       fields[:Actuals] += old_hours.to_i
 
       updated_task = rally.update('task', "FormattedID|#{task}", fields)
 
+      # reply back with new actuals
       m.reply "#{updated_task.FormattedID} has consumed #{updated_task.Actuals} hour(s)"
     when /^register/
       m.reply "Go to https://rally1.rallydev.com/login . Log in and click on the API Keys tab at the top of the page and generate a full access key."
       m.reply "then /msg #{ENV['RALLY_BOT_NAME']} confirm <rally email> <api key>"
     when /^confirm/
-      nick = parse_nick(m.user.nick)
       match = /^confirm (.*) (.*)/.match(m.message)
       if match
-        m.reply "Registering #{nick} as #{match[1]}"
-        register(nick, match[1], match[2])
+        m.reply "Registering #{username} as #{match[1]}"
+        register(username, match[1], match[2])
         m.reply "Done!"
       else
         m.reply "That didn't make any sense..."
