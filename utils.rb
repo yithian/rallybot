@@ -6,7 +6,7 @@ include Mongo
 $login_collection = 'users'
 
 def usage(msg)
-  msg.reply 'list [stories|tasks|defects] <user> - list stuff assigned to user'
+  msg.reply 'list [stories|tasks|defects] <email> - list stuff assigned to user'
   msg.reply '[story|task|defect] <id> update name <...> - change the name of a task'
   msg.reply 'task <id> hours <number> - add hours worked on a task'
   msg.reply "register - create an api key for use with #{ENV['RALLY_BOT_NAME']}"

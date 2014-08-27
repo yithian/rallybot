@@ -36,6 +36,10 @@ bot = Cinch::Bot.new do
     case m.message
     when /^list \w+ \w+/
       match = m.message.match(/^list (\w+) (\w+@\w+\.\w+)/)
+      if match.nil?
+        m.reply "usage: list [stories|tasks|defects] <email>"
+        next
+      end
       type_plural = match[1].to_sym
       items_for = match[2]
       id_length = 1
