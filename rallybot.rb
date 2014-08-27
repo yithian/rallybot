@@ -6,8 +6,6 @@ require 'cinch'
 require 'rally_api'
 require_relative './utils.rb'
 
-include Mongo
-
 bot = Cinch::Bot.new do
   configure do |c|
     # get some basic defaults

@@ -1,6 +1,8 @@
 require 'rally_api'
 require 'mongo'
 
+include Mongo
+
 $login_collection = 'users'
 
 def usage(msg)
