@@ -57,18 +57,19 @@ bot = Cinch::Bot.new do
       end
 
       # query rally
-      rally = connect_rally(username)
-      r = rally.find do |q|
-        q.type = type_single
-        q.fetch = 'FormattedID,Name'
-        q.order = 'FormattedID Asc'
-        case type_single
-        when :task
-          q.query_string = "((Owner.Name = #{items_for}) and (State < Completed))"
-        when :story
-          q.query_string = "((Owner.Name = #{items_for}) and (ScheduleState < Completed))"
-        when :defect
-          q.query_string = "((Owner.Name = #{items_for}) and (State < Closed))"
+      r = connect_rally(username) do |rally|
+        rally.find do |q|
+          q.type = type_single
+          q.fetch = 'FormattedID,Name'
+          q.order = 'FormattedID Asc'
+          case type_single
+          when :task
+            q.query_string = "((Owner.Name = #{items_for}) and (State < Completed))"
+          when :story
+            q.query_string = "((Owner.Name = #{items_for}) and (ScheduleState < Completed))"
+          when :defect
+            q.query_string = "((Owner.Name = #{items_for}) and (State < Closed))"
+          end
         end
       end
 
@@ -99,8 +100,7 @@ bot = Cinch::Bot.new do
       end
 
       # update rally
-      rally = connect_rally(username)
-      updated_item = rally.update(type_single, "FormattedID|#{item}", fields)
+      updated_item = connect_rally(username) { |rally| rally.update(type_single, "FormattedID|#{item}", fields) }
 
       # reply back with success
       m.reply "#{item} is now named #{updated_item.Name}"
@@ -117,11 +117,12 @@ bot = Cinch::Bot.new do
       end
 
       # update rally
-      rally = connect_rally(username)
-      old_hours = rally.read('task', "FormattedID|#{task}").Actuals
-      fields[:Actuals] += old_hours.to_i
+      updated_task = connect_rally(username) do |rally|
+        old_hours = rally.read('task', "FormattedID|#{task}").Actuals
+        fields[:Actuals] += old_hours.to_i
 
-      updated_task = rally.update('task', "FormattedID|#{task}", fields)
+        rally.update('task', "FormattedID|#{task}", fields)
+      end
 
       # reply back with new actuals
       m.reply "#{updated_task.FormattedID} has consumed #{updated_task.Actuals} hour(s)"
