@@ -7,6 +7,7 @@ $login_collection = 'users'
 
 def usage(msg)
   msg.reply 'projects - list your projects'
+  msg.reply 'select project <project name> - select a project on which to operate'
   msg.reply 'list [stories|tasks|defects] <email> - list stuff assigned to user'
   msg.reply '[story|task|defect] <id> update name <...> - change the name of a task'
   msg.reply 'task <id> hours <number> - add hours worked on a task'
@@ -59,7 +60,17 @@ def register(nick, email, key)
   end
 end
 
-# given a nick, grab the stored email and api key from the db
+# update a user's preferred project
+def select_project(nick, proj_name)
+  db_connect do |db|
+    u = db[$login_collection].find_one({_id: nick})
+    u['project'] = proj_name
+
+    db[$login_collection].update({_id: nick}, u, {:upsert => true})
+  end
+end
+
+# given a nick, grab the stored email, project and api key from the db
 def identify(nick)
   db_connect do |db|
     doc = db[$login_collection].find_one({_id: parse_nick(nick)})
@@ -75,7 +86,7 @@ def connect_rally(nick, &block)
     base_url: 'https://rally1.rallydev.com/slm',
     api_key: deets[:key],
     workspace: ENV['RALLY_BOT_WORKSPACE'],
-    project: ENV['RALLY_BOT_PROJECT'],
+    #project: deets[:project],
     headers: headers = RallyAPI::CustomHttpHeader.new({vendor: 'Brofaces', name: 'rallybot irc bot', version: '1.0'})
   }
 

@@ -59,6 +59,28 @@ bot = Cinch::Bot.new do
           m.reply project.to_s
         end
       end
+    when /^select project/
+      project = m.message.match(/^select project (.*)/)[1]
+
+      unless registered_nicks.include?(username)
+        m.reply "User '#{username}' isn't registered with me :("
+        next
+      end
+
+      # this query should only return one user with your email address
+      p = connect_rally(username) do |rally|
+        rally.find do |q|
+          q.type = 'project'
+          q.fetch = 'Name,ObjectID'
+          q.order = 'Name'
+          q.query_string = "(Name = \"#{project}\")"
+        end
+      end
+
+      project_id = p.first.ObjectID
+
+      select_project(username, project_id)
+      m.reply "you are now operating on #{project}"
     when /^list \w+ \w+/
       match = m.message.match(/^list (\w+) (\w+@\w+\.\w+)/)
       if match.nil?
@@ -87,6 +109,7 @@ bot = Cinch::Bot.new do
           q.type = type_single
           q.fetch = 'FormattedID,Name'
           q.order = 'FormattedID Asc'
+          q.project = {'_ref' => "/project/#{identify(username)[:project]}"}
           case type_single
           when :task
             q.query_string = "((Owner.Name = #{items_for}) and (State < Completed))"
