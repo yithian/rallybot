@@ -6,6 +6,7 @@ include Mongo
 $login_collection = 'users'
 
 def usage(msg)
+  msg.reply 'projects - list your projects'
   msg.reply 'list [stories|tasks|defects] <email> - list stuff assigned to user'
   msg.reply '[story|task|defect] <id> update name <...> - change the name of a task'
   msg.reply 'task <id> hours <number> - add hours worked on a task'
@@ -54,7 +55,7 @@ end
 # store a nick/email/login in the db
 def register(nick, email, key)
   db_connect do |db|
-    db[$login_collection].update({'_id' => nick}, {'_id' => nick, 'email' => email, 'key' => key}, {:upsert => true})
+    db[$login_collection].update({_id: nick}, {_id: nick, email: email, key: key}, {:upsert => true})
   end
 end
 
@@ -62,7 +63,7 @@ end
 def identify(nick)
   db_connect do |db|
     doc = db[$login_collection].find_one({_id: parse_nick(nick)})
-    {email: doc['email'], key: doc['key']} if doc
+    {email: doc['email'], project: doc['project'], key: doc['key']} if doc
   end
 end
 

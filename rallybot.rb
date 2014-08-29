@@ -34,6 +34,31 @@ bot = Cinch::Bot.new do
     username = parse_nick(m.user.nick)
 
     case m.message
+    when /^projects/
+      unless registered_nicks.include?(username)
+        m.reply "User '#{username}' isn't registered with me :("
+        next
+      end
+
+      # this query should only return one user with your email address
+      u = connect_rally(username) do |rally|
+        rally.find do |q|
+          q.type = 'user'
+          q.fetch = 'EmailAddress,TeamMemberships'
+          q.order = 'EmailAddress'
+          q.query_string = "(EmailAddress = #{identify(username)[:email]})"
+        end
+      end
+
+      if u.first.TeamMemberships.count == 0
+        m.reply 'you aren\'t on any projects :('
+        next
+      else
+        m.reply 'you are on the following projects:'
+        u.first.TeamMemberships.each do |project|
+          m.reply project.to_s
+        end
+      end
     when /^list \w+ \w+/
       match = m.message.match(/^list (\w+) (\w+@\w+\.\w+)/)
       if match.nil?
