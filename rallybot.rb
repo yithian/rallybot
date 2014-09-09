@@ -21,7 +21,7 @@ bot = Cinch::Bot.new do
     unless ENV["RALLY_BOT_CHANNEL_KEY"].nil? or ENV["RALLY_BOT_CHANNEL_KEY"].empty?
       c.channels = ["#{ENV['RALLY_BOT_CHANNEL']} #{ENV['RALLY_BOT_CHANNEL_KEY']}"]
     else
-      c.channels = [ENV['RALLY_BOT_CHANNEL']]
+      c.channels = ENV['RALLY_BOT_CHANNEL'].split(', ')
     end
 
     if ENV['RALLY_BOT_SERVER_USE_SSL'] == "true"
