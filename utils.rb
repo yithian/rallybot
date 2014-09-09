@@ -61,10 +61,10 @@ def register(nick, email, key)
 end
 
 # update a user's preferred project
-def select_project(nick, proj_name)
+def select_project(nick, proj_id)
   db_connect do |db|
     u = db[$login_collection].find_one({_id: nick})
-    u['project'] = proj_name
+    u['project'] = proj_id
 
     db[$login_collection].update({_id: nick}, u, {:upsert => true})
   end
