@@ -81,12 +81,8 @@ bot = Cinch::Bot.new do
 
       select_project(username, project_id)
       m.reply "you are now operating on #{project}"
-    when /^list \w+ \w+/
+    when /^list (?:stories|tasks|defects) \w+/
       match = m.message.match(/^list (\w+) (\w+@\w+\.\w+)/)
-      if match.nil?
-        m.reply "usage: list [stories|tasks|defects] <email>"
-        next
-      end
       type_plural = match[1].to_sym
       items_for = match[2]
       id_length = 1
