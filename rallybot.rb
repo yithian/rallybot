@@ -174,6 +174,25 @@ bot = Cinch::Bot.new do
 
       # reply back with new actuals
       m.reply "#{updated_task.FormattedID} has consumed #{updated_task.Actuals} hour(s)"
+    when /^task \w+ state (?:Defined|In-Progress|Completed)/
+      match = m.message.match(/^task (\w+) state (.*)/)
+      task = match[1]
+      state = match[2]
+      fields = {}
+      fields[:State] = state
+
+      # make sure everything is ok before doing anything
+      unless registered_nicks.include?(username)
+        m.reply "User '#{username}' isn't registered with me :("
+        next
+      end
+
+      updated_task = connect_rally(username) do |rally|
+        rally.update('task', "FormattedID|#{task}", fields)
+      end
+
+      # reply back that the task is completed
+      m.reply "#{updated_task.FormattedID} is now marked as #{updated_task.State}"
     when /^register/
       m.reply "Go to https://rally1.rallydev.com/login . Log in and click on the API Keys tab at the top of the page and generate a full access key."
       m.reply "then /msg #{ENV['RALLY_BOT_NAME']} confirm <rally email> <api key>"
