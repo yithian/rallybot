@@ -81,9 +81,8 @@ bot = Cinch::Bot.new do
 
       select_project(username, project_id)
       m.reply "you are now operating on #{project}"
-    when /^list (stories|tasks|defects) (\w+@\w+\.\w+)/
+    when /^list\s+(stories|tasks|defects)(?:\s+?(\w+@\w+\.\w+))?/
       type_plural = $1.to_sym
-      items_for = $2
       id_length = 1
 
       # make sure everything is ok before doing anything
@@ -97,6 +96,11 @@ bot = Cinch::Bot.new do
         m.reply "User '#{username}' isn't registered with me :("
         next
       end
+      info = identify(username)
+
+      # if an email address is provided, use that. otherwise, use the email of
+      # the (registered) user talking to the bot
+      items_for = $2 ? $2 : info[:email]
 
       # query rally
       r = connect_rally(username) do |rally|
@@ -104,7 +108,7 @@ bot = Cinch::Bot.new do
           q.type = type_single
           q.fetch = 'FormattedID,Name'
           q.order = 'FormattedID Asc'
-          q.project = {'_ref' => "/project/#{identify(username)[:project]}"} if identify(username)[:project]
+          q.project = {'_ref' => "/project/#{info[:project]}"} if info[:project]
           case type_single
           when :task
             q.query_string = "((Owner.Name = #{items_for}) and (State < Completed))"

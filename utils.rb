@@ -8,7 +8,7 @@ $login_collection = 'users'
 def usage(msg)
   msg.reply 'projects - list your projects'
   msg.reply 'select project <project name> - select a project on which to operate'
-  msg.reply 'list [stories|tasks|defects] <email> - list stuff assigned to user'
+  msg.reply 'list [stories|tasks|defects] (<email>) - list stuff assigned to you (or another user)'
   msg.reply '[story|task|defect] <id> update name <...> - change the name of a task'
   msg.reply 'task <id> hours <number> - add hours worked on a task'
   msg.reply 'task <id> state [Defined|In-Progress|Completed] - change the state of a task'
