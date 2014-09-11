@@ -81,10 +81,9 @@ bot = Cinch::Bot.new do
 
       select_project(username, project_id)
       m.reply "you are now operating on #{project}"
-    when /^list (?:stories|tasks|defects) \w+/
-      match = m.message.match(/^list (\w+) (\w+@\w+\.\w+)/)
-      type_plural = match[1].to_sym
-      items_for = match[2]
+    when /^list (stories|tasks|defects) (\w+@\w+\.\w+)/
+      type_plural = $1.to_sym
+      items_for = $2
       id_length = 1
 
       # make sure everything is ok before doing anything
@@ -125,12 +124,11 @@ bot = Cinch::Bot.new do
       # reply with the user's items, if there are any
       r.each { |thing| id_length = thing.FormattedID.length if thing.FormattedID.length > id_length }
       r.each { |thing| m.reply "#{thing.FormattedID.rjust(id_length)} : #{thing.Name}" }
-    when /^\w+ \w+ update name/
-      match = m.message.match(/^(\w+) (\w+) update name (.*)/)
-      type_single = match[1].to_sym
-      item = match[2]
+    when /^(\w+) (\w+) update name (.*)/
+      type_single = $s.to_sym
+      item = $2
       fields = {}
-      fields[:Name] = match[3]
+      fields[:Name] = $3
 
       # make sure everything is ok before doing anything
       unless $items.has_value?(type_single)
@@ -148,11 +146,10 @@ bot = Cinch::Bot.new do
 
       # reply back with success
       m.reply "#{item} is now named #{updated_item.Name}"
-    when /^task \w+ hours/
-      match = m.message.match(/^task (\w+) hours (\d+)/)
-      task = match[1]
+    when /^task (\w+) hours (\d+)/
+      task = $1
       fields = {}
-      fields[:Actuals] = match[2].to_i
+      fields[:Actuals] = $2.to_i
 
       # make sure everything is ok before doing anything
       unless registered_nicks.include?(username)
@@ -170,12 +167,10 @@ bot = Cinch::Bot.new do
 
       # reply back with new actuals
       m.reply "#{updated_task.FormattedID} has consumed #{updated_task.Actuals} hour(s)"
-    when /^task \w+ state (?:Defined|In-Progress|Completed)/
-      match = m.message.match(/^task (\w+) state (.*)/)
-      task = match[1]
-      state = match[2]
+    when /^task (\w+) state (Defined|In-Progress|Completed)/
+      task = $1
       fields = {}
-      fields[:State] = state
+      fields[:State] = $2
 
       # make sure everything is ok before doing anything
       unless registered_nicks.include?(username)
@@ -192,17 +187,16 @@ bot = Cinch::Bot.new do
     when /^register/
       m.reply "Go to https://rally1.rallydev.com/login . Log in and click on the API Keys tab at the top of the page and generate a full access key."
       m.reply "then /msg #{ENV['RALLY_BOT_NAME']} confirm <rally email> <api key>"
-    when /^confirm/
-      match = /^confirm (.*) (.*)/.match(m.message)
+    when /^confirm (.*) (.*)/.match(m.message)
       if match
-        m.reply "Registering #{username} as #{match[1]}"
-        register(username, match[1], match[2])
+        m.reply "Registering #{username} as #{$1}"
+        register(username, $1, $2)
         m.reply "Done!"
       else
         m.reply "That didn't make any sense..."
       end
-    when /^quit\s*\w*/
-      code = /^quit\s*(\w*)/.match(m.message)[1]
+    when /^quit\s*(\w*)/
+      code = $1
       bot.quit if ENV['RALLY_BOT_QUIT_CODE'].eql?(code)
 
       if code.empty?
