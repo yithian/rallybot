@@ -175,6 +175,17 @@ bot = Cinch::Bot.new do
 
       # reply back with new actuals
       m.reply "#{updated_task.FormattedID} has consumed #{updated_task.Actuals} hour(s) with #{updated_task.ToDo} remaining"
+    when /^task\s+(\w+)\s+todo\s+(\d+)/
+      task = $1
+      fields = {}
+      fields[:ToDo] = $2
+
+      updated_task = connect_rally(username) do |rally|
+        rally.update('task', "FormattedID|#{task}", fields)
+      end
+
+      # reply back with new To Do hours
+      m.reply "#{updated_task.FormattedID} has #{updated_task.ToDo} hours remaining"
     when /^task (\w+) state (Defined|In-Progress|Completed)/
       task = $1
       fields = {}
