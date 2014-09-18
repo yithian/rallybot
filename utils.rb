@@ -10,7 +10,8 @@ def usage(msg)
   msg.reply 'select project <project name> - select a project on which to operate'
   msg.reply 'list [stories|tasks|defects] (<email>) - list stuff assigned to you (or another user)'
   msg.reply '[story|task|defect] <id> update name <...> - change the name of a task'
-  msg.reply 'task <id> hours <number> - add hours worked on a task'
+  msg.reply 'task <id> hours <number> (--no-todo) - add hours worked on a task and decrease the todo hours'
+  msg.reply '  (with --no-todo, this will not the task\'s todo hours'
   msg.reply 'task <id> state [Defined|In-Progress|Completed] - change the state of a task'
   msg.reply "register - create an api key for use with #{ENV['RALLY_BOT_NAME']}"
   msg.reply "confirm <email> <api_key> - store your api key for use with #{ENV['RALLY_BOT_NAME']}"

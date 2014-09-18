@@ -150,10 +150,11 @@ bot = Cinch::Bot.new do
 
       # reply back with success
       m.reply "#{item} is now named #{updated_item.Name}"
-    when /^task (\w+) hours (\d+)/
+    when /^task\s+(\w+)\s+hours\s+(\d+)(?:\s+(--no-todo))?/
       task = $1
       fields = {}
-      fields[:Actuals] = $2.to_i
+      actuals = $2.to_i
+      todo = $3.nil?
 
       # make sure everything is ok before doing anything
       unless registered_nicks.include?(username)
@@ -163,14 +164,17 @@ bot = Cinch::Bot.new do
 
       # update rally
       updated_task = connect_rally(username) do |rally|
-        old_hours = rally.read('task', "FormattedID|#{task}").Actuals
-        fields[:Actuals] += old_hours.to_i
+        old_task = rally.read('task', "FormattedID|#{task}")
+        old_hours = old_task.Actuals
+        old_todo = old_task.ToDo
+        fields[:Actuals] = old_hours.to_i + actuals
+        fields[:ToDo] = old_todo - actuals if todo
 
         rally.update('task', "FormattedID|#{task}", fields)
       end
 
       # reply back with new actuals
-      m.reply "#{updated_task.FormattedID} has consumed #{updated_task.Actuals} hour(s)"
+      m.reply "#{updated_task.FormattedID} has consumed #{updated_task.Actuals} hour(s) with #{updated_task.ToDo} remaining"
     when /^task (\w+) state (Defined|In-Progress|Completed)/
       task = $1
       fields = {}
