@@ -206,14 +206,12 @@ bot = Cinch::Bot.new do
     when /^register/
       m.reply "Go to https://rally1.rallydev.com/login . Log in and click on the API Keys tab at the top of the page and generate a full access key."
       m.reply "then /msg #{ENV['RALLY_BOT_NAME']} confirm <rally email> <api key>"
-    when /^confirm (.*) (.*)/.match(m.message)
-      if match
-        m.reply "Registering #{username} as #{$1}"
-        register(username, $1, $2)
-        m.reply "Done!"
-      else
-        m.reply "That didn't make any sense..."
-      end
+    when /^confirm (.*) (.*)/
+      email = $1
+      api_key = $2
+      m.reply "Registering #{username} as #{email}"
+      register(username, email, api_key)
+      m.reply "Done!"
     when /^quit\s*(\w*)/
       code = $1
       bot.quit if ENV['RALLY_BOT_QUIT_CODE'].eql?(code)
