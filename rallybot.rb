@@ -7,6 +7,8 @@ require 'rally_api'
 require_relative './utils.rb'
 
 $items = {stories: :story, tasks: :task, defects: :defect}
+# ruby doesn't allow for '-' in symbols, so in-progres and In-Progress get to be strings
+$states = {backlog: :Backlog, defined: :Defined, 'in-progress' => 'In-Progress', completed: :Completed, accepted: :Accepted}
 
 bot = Cinch::Bot.new do
   configure do |c|
