@@ -82,9 +82,11 @@ bot = Cinch::Bot.new do
 
       select_project(username, project_id)
       m.reply "you are now operating on #{project}"
-    when /^list\s+(stories|tasks|defects)(?:\s+?(\w+@\w+\.\w+))?/
+    when /^list\s+(stories|tasks|defects)(?:\s+(backlog|defined|in-progress|completed|accepted))?(?:\s+?(\w+@\w+\.\w+))?/
       type_plural = $1.to_sym
       id_length = 1
+      state = $2.to_sym if $2
+      email = $3
 
       # make sure everything is ok before doing anything
       unless $items.include?(type_plural)
@@ -101,7 +103,7 @@ bot = Cinch::Bot.new do
 
       # if an email address is provided, use that. otherwise, use the email of
       # the (registered) user talking to the bot
-      items_for = $2 ? $2 : info[:email]
+      items_for = email ? email : info[:email]
 
       # query rally
       r = connect_rally(username) do |rally|
@@ -110,19 +112,39 @@ bot = Cinch::Bot.new do
           q.fetch = 'FormattedID,Name'
           q.order = 'FormattedID Asc'
           q.project = {'_ref' => "/project/#{info[:project]}"} if info[:project]
+
+          q.query_string = "((Owner.Name = #{items_for})"
+          # add type-specific state query (if needed)
           case type_single
           when :task
-            q.query_string = "((Owner.Name = #{items_for}) and (State < Completed))"
+            if state
+              q.query_string << " and (State = #{$states[state]})"
+            else
+              q.query_string << ' and (State < Completed)'
+            end
           when :story
-            q.query_string = "((Owner.Name = #{items_for}) and (ScheduleState < Completed))"
+            if state
+              q.query_string << " and (ScheduleState = #{$states[state]})"
+            else
+              q.query_string << ' and (ScheduleState < Completed)'
+            end
           when :defect
-            q.query_string = "((Owner.Name = #{items_for}) and (State < Closed))"
+            if state
+              q.query_string << " and (State = #{$states[state]})"
+            else
+              q.query_string << ' and (State < Closed)'
+            end
           end
+          # close off the query string
+          q.query_string << ")"
         end
       end
 
       if r.empty?
-        m.reply "User \"#{items_for}\" has no #{type_plural} assigned."
+        response = "User \"#{items_for}\" has no"
+        response << " " + state.to_s if state
+        response << " #{type_plural} assigned."
+        m.reply response
         next
       end
 
@@ -210,6 +232,7 @@ bot = Cinch::Bot.new do
     when /^confirm (.*) (.*)/
       email = $1
       api_key = $2
+
       m.reply "Registering #{username} as #{email}"
       register(username, email, api_key)
       m.reply "Done!"
