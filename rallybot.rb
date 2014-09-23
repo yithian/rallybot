@@ -4,9 +4,10 @@ require 'cinch'
 # https://rally1.rallydev.com/login
 
 require 'rally_api'
-require_relative './utils.rb'
+require_relative 'utils'
+require_relative 'item'
 
-$items = {stories: :story, tasks: :task, defects: :defect}
+$items = {stories: Item.new('story', 'ScheduleState', 'Completed'), tasks: Item.new('task', 'State', 'Completed'), defects: Item.new('defect', 'State', 'Closed')}
 $states = {backlog: :Backlog, defined: :Defined, :'in-progress' => :'In-Progress', completed: :Completed, accepted: :Accepted}
 
 bot = Cinch::Bot.new do
@@ -93,7 +94,7 @@ bot = Cinch::Bot.new do
         m.reply "I don't know what #{type_plural} are..."
         next
       end
-      type_single = $items[type_plural]
+      item = $items[type_plural]
 
       unless registered_nicks.include?(username)
         m.reply "User '#{username}' isn't registered with me :("
@@ -108,32 +109,17 @@ bot = Cinch::Bot.new do
       # query rally
       r = connect_rally(username) do |rally|
         rally.find do |q|
-          q.type = type_single
+          q.type = item.singular
           q.fetch = 'FormattedID,Name'
           q.order = 'FormattedID Asc'
           q.project = {'_ref' => "/project/#{info[:project]}"} if info[:project]
 
           q.query_string = "((Owner.Name = #{items_for})"
           # add type-specific state query (if needed)
-          case type_single
-          when :task
-            if state
-              q.query_string << " and (State = #{$states[state]})"
-            else
-              q.query_string << ' and (State < Completed)'
-            end
-          when :story
-            if state
-              q.query_string << " and (ScheduleState = #{$states[state]})"
-            else
-              q.query_string << ' and (ScheduleState < Completed)'
-            end
-          when :defect
-            if state
-              q.query_string << " and (State = #{$states[state]})"
-            else
-              q.query_string << ' and (State < Closed)'
-            end
+          if state
+            q.query_string << " and (#{item.state} = #{$states[state]})"
+          else
+            q.query_string << " and (#{item.state} < #{item.closed})"
           end
           # close off the query string
           q.query_string << ")"
