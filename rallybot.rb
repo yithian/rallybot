@@ -83,11 +83,13 @@ bot = Cinch::Bot.new do
 
       select_project(username, project_id)
       m.reply "you are now operating on #{project}"
-    when /^list\s+(stories|tasks|defects)(?:\s+(backlog|defined|in-progress|completed|accepted))?(?:\s+?(\w+@\w+\.\w+))?/
+    when /^list\s+(stories|tasks|defects)(?:\s+(backlog|defined|in-progress|completed|accepted))?(?:\s+(\d+)\s+months)?(?:\s+?(\w+@\w+\.\w+))?/
       type_plural = $1.to_sym
       id_length = 1
       state = $2.to_sym if $2
-      email = $3
+      prev_date = $3 ? Date.today << $3.to_i : Date.today - 14
+      time = DateTime.new(prev_date.year, prev_date.month, prev_date.day).strftime('%FT%T.%3NZ')
+      email = $4
 
       # make sure everything is ok before doing anything
       unless $items.include?(type_plural)
@@ -114,22 +116,26 @@ bot = Cinch::Bot.new do
           q.order = 'FormattedID Asc'
           q.project = {'_ref' => "/project/#{info[:project]}"} if info[:project]
 
-          q.query_string = "((Owner.Name = #{items_for})"
+          q.query_string = "(((Owner.Name = #{items_for})"
           # add type-specific state query (if needed)
           if state
             q.query_string << " and (#{item.state} = #{$states[state]})"
           else
             q.query_string << " and (#{item.state} < #{item.closed})"
           end
+          # add time query
+          q.query_string << ") and (LastUpdateDate > #{time})"
           # close off the query string
           q.query_string << ")"
+          # query string should end up looking like
+          # (((Owner.name = email@address.tld) and (State < Closed)) and (LastUpdateDate > 2014-09-18T19:39:14.026Z))
         end
       end
 
       if r.empty?
         response = "User \"#{items_for}\" has no"
         response << " " + state.to_s if state
-        response << " #{type_plural} assigned."
+        response << " #{type_plural} assigned that have been updated since #{prev_date}."
         m.reply response
         next
       end
