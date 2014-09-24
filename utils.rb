@@ -8,12 +8,12 @@ $login_collection = 'users'
 def usage(msg)
   msg.reply 'projects - list your projects'
   msg.reply 'select project <project name> - select a project on which to operate'
-  msg.reply 'list [stories|tasks|defects] (<state>) (<number> months) (<email>) - list stuff assigned to you'
+  msg.reply "list [#{$items.keys.join('|')}] (<state>) (<number> months) (<email>) - list stuff assigned to you"
   msg.reply '  (<state> - list items in the speicified state'
-  msg.reply '     can be one of [backlog|defined|in-progress|completed|accepted])'
+  msg.reply "     can be one of [#{$states.keys.join('|')}])"
   msg.reply '  (<email> - list stuff assigned to the specified user)'
   msg.reply '  (<number> months - display all matching items updated within this many months)'
-  msg.reply '[story|task|defect] <id> update name <...> - change the name of a task'
+  msg.reply "[#{$items.keys.join('|')}] <id> update name <...> - change the name of a task"
   msg.reply 'task <id> hours <number> (--no-todo) - add hours worked on a task and decrease the todo hours'
   msg.reply '  (with --no-todo, this will not the task\'s todo hours)'
   msg.reply 'task <id> todo <number> - specify total remaining hours for a task'

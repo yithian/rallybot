@@ -8,7 +8,7 @@ require_relative 'utils'
 require_relative 'item'
 
 $items = {stories: Item.new('story', 'ScheduleState', 'Completed'), tasks: Item.new('task', 'State', 'Completed'), defects: Item.new('defect', 'State', 'Closed')}
-$states = {backlog: :Backlog, defined: :Defined, :'in-progress' => :'In-Progress', completed: :Completed, accepted: :Accepted}
+$states = {backlog: :Backlog, defined: :Defined, :'in-progress' => :'In-Progress', completed: :Completed, closed: :Closed, accepted: :Accepted}
 
 bot = Cinch::Bot.new do
   configure do |c|
@@ -83,7 +83,7 @@ bot = Cinch::Bot.new do
 
       select_project(username, project_id)
       m.reply "you are now operating on #{project}"
-    when /^list\s+(stories|tasks|defects)(?:\s+(backlog|defined|in-progress|completed|accepted))?(?:\s+(\d+)\s+months)?(?:\s+?(\w+@\w+\.\w+))?/
+    when /^list\s+(#{$items.keys.join('|')})(?:\s+(#{$states.keys.join('|')}))?(?:\s+(\d+)\s+months)?(?:\s+?(\w+@\w+\.\w+))?/
       type_plural = $1.to_sym
       id_length = 1
       state = $2.to_sym if $2
@@ -94,6 +94,15 @@ bot = Cinch::Bot.new do
       # make sure everything is ok before doing anything
       unless $items.include?(type_plural)
         m.reply "I don't know what #{type_plural} are..."
+        next
+      end
+      # defects get closed and stories/tasks get completed
+      # i hate this terminology quirk of Rally
+      if state == :closed and type_plural != :defects
+        m.reply 'only Defects can be in a Closed state.'
+        next
+      elsif state == :completed and (type_plural != :tasks or type_plural != :stories)
+        m.reply 'only Stories and Tasks can be in a Completed state'
         next
       end
       item = $items[type_plural]
