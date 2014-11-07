@@ -42,22 +42,21 @@ bot = Cinch::Bot.new do
         next
       end
 
-      # this query should only return one user with your email address
-      u = connect_rally(username) do |rally|
+      projects = connect_rally(username) do |rally|
         rally.find do |q|
           q.type = 'project'
-          q.fetch = 'Name'
+          q.fetch = 'Name,TeamMembers'
           q.order = 'Name asc'
-          q.query_string = "(TeamMembers contains \"#{identify(username)[:email]}\")"
+          q.query_string = "(TeamMembers.EmailAddress = \"#{identify(username)[:email]}\")"
         end
       end
 
-      if u.count == 0
+      if projects.count == 0
         m.reply 'you aren\'t on any projects :('
         next
       else
         m.reply 'you are on the following projects:'
-        u.each do |project|
+        projects.each do |project|
           m.reply project.to_s
         end
       end
