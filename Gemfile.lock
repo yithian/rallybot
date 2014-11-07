@@ -1,15 +1,15 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    bson (1.10.2)
-    bson_ext (1.10.2)
-      bson (~> 1.10.2)
+    bson (1.11.1)
+    bson_ext (1.11.1)
+      bson (~> 1.11.1)
     cinch (2.1.0)
-    httpclient (2.3.4.1)
-    mongo (1.10.2)
-      bson (= 1.10.2)
-    rally_api (1.0.1)
-      httpclient (~> 2.3.0)
+    httpclient (2.4.0)
+    mongo (1.11.1)
+      bson (= 1.11.1)
+    rally_api (1.1.2)
+      httpclient (~> 2.4.0)
 
 PLATFORMS
   ruby
