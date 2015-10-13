@@ -210,7 +210,7 @@ bot = Cinch::Bot.new do
       # reply back with new To Do hours
       m.reply "#{updated_task.FormattedID} has #{updated_task.ToDo} hours remaining"
     when /^(\w+) (\w+) state (Defined|In-Progress|Completed)/
-      itype = $items[$1.to_sym]
+      itype = $items.select{ |k,v| v.singular == $1 }.values.first
       item = $2
       fields = {}
       fields[itype.state] = $3
