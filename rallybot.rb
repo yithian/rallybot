@@ -209,10 +209,12 @@ bot = Cinch::Bot.new do
 
       # reply back with new To Do hours
       m.reply "#{updated_task.FormattedID} has #{updated_task.ToDo} hours remaining"
-    when /^task (\w+) state (Defined|In-Progress|Completed)/
-      task = $1
+    when /^(\w+) (\w+) state (Defined|In-Progress|Completed)/
+      itype = $items[$1.to_sym]
+      item = $2
       fields = {}
-      fields[:State] = $2
+      fields[itype.state] = $3
+      puts "fields = #{fields.inspect}"
 
       # make sure everything is ok before doing anything
       unless registered_nicks.include?(username)
@@ -220,12 +222,14 @@ bot = Cinch::Bot.new do
         next
       end
 
-      updated_task = connect_rally(username) do |rally|
-        rally.update('task', "FormattedID|#{task}", fields)
+      updated_item = connect_rally(username) do |rally|
+        rally.update(itype.singular, "FormattedID|#{item}", fields)
       end
 
+      puts updated_item.inspect
+
       # reply back that the task is completed
-      m.reply "#{updated_task.FormattedID} is now marked as #{updated_task.State}"
+      m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[itype.state]}"
     when /^register/
       m.reply "Go to https://rally1.rallydev.com/login . Log in and click on the API Keys tab at the top of the page and generate a full access key."
       m.reply "then /msg #{ENV['RALLY_BOT_NAME']} confirm <rally email> <api key>"
