@@ -97,6 +97,7 @@ bot = Cinch::Bot.new do
     when /^list\s+(#{$items.keys.join('|')})(?:\s+(#{$states.keys.join('|')}))?(?:\s+(\d+)\s+months)?(?:\s+?(\w+@\w+\.\w+))?/
       type_plural = $1.to_sym
       id_length = 1
+      name_length = 1
       state = $2.to_sym if $2
       prev_date = $3 ? Date.today << $3.to_i : Date.today - 14
       time = DateTime.new(prev_date.year, prev_date.month, prev_date.day).strftime('%FT%T.%3NZ')
@@ -132,7 +133,7 @@ bot = Cinch::Bot.new do
       r = connect_rally(username) do |rally|
         rally.find do |q|
           q.type = item.singular
-          q.fetch = 'FormattedID,Name'
+          q.fetch = "FormattedID,Name,#{item.state}"
           q.order = 'FormattedID Asc'
           q.project = {'_ref' => "/project/#{info[:project]}"} if info[:project]
 
@@ -162,7 +163,8 @@ bot = Cinch::Bot.new do
 
       # reply with the user's items, if there are any
       r.each { |thing| id_length = thing.FormattedID.length if thing.FormattedID.length > id_length }
-      r.each { |thing| m.reply "#{thing.FormattedID.rjust(id_length)} : #{thing.Name}" }
+      r.each { |thing| name_length = thing.Name.length if thing.Name.length > name_length }
+      r.each { |thing| m.reply "#{thing.FormattedID.rjust(id_length)} : #{thing.Name.ljust(name_length)} : #{thing[item.state]}" }
 
     # update the name of the specified item
     when /^(\w+) (\w+) update name (.*)/
