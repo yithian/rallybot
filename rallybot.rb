@@ -194,7 +194,6 @@ bot = Cinch::Bot.new do
       item = $2
       fields = {}
       fields[itype.state] = $3
-      puts "fields = #{fields.inspect}"
 
       # make sure everything is ok before doing anything
       unless registered_nicks.include?(username)
