@@ -36,6 +36,8 @@ bot = Cinch::Bot.new do
     username = parse_nick(m.user.nick)
 
     case m.message
+
+    # list out all known projects
     when /^projects/
       unless registered_nicks.include?(username)
         m.reply "User '#{username}' isn't registered with me :("
@@ -60,6 +62,9 @@ bot = Cinch::Bot.new do
           m.reply project.to_s
         end
       end
+
+    # select a project from which to work
+    # this shouldn't happen frequently
     when /^select project/
       project = m.message.match(/^select project (.*)/)[1]
 
@@ -82,6 +87,13 @@ bot = Cinch::Bot.new do
 
       select_project(username, project_id)
       m.reply "you are now operating on #{project}"
+
+    # list items of the specified type
+    #
+    # this can be filtered by:
+    # date
+    # email
+    # state
     when /^list\s+(#{$items.keys.join('|')})(?:\s+(#{$states.keys.join('|')}))?(?:\s+(\d+)\s+months)?(?:\s+?(\w+@\w+\.\w+))?/
       type_plural = $1.to_sym
       id_length = 1
@@ -151,6 +163,8 @@ bot = Cinch::Bot.new do
       # reply with the user's items, if there are any
       r.each { |thing| id_length = thing.FormattedID.length if thing.FormattedID.length > id_length }
       r.each { |thing| m.reply "#{thing.FormattedID.rjust(id_length)} : #{thing.Name}" }
+
+    # update the name of the specified item
     when /^(\w+) (\w+) update name (.*)/
       type_single = $s.to_sym
       item = $2
@@ -173,6 +187,33 @@ bot = Cinch::Bot.new do
 
       # reply back with success
       m.reply "#{item} is now named #{updated_item.Name}"
+
+    # change the state of an item
+    when /^(\w+) (\w+) state (Defined|In-Progress|Completed)/
+      itype = $items.select{ |k,v| v.singular == $1 }.values.first
+      item = $2
+      fields = {}
+      fields[itype.state] = $3
+      puts "fields = #{fields.inspect}"
+
+      # make sure everything is ok before doing anything
+      unless registered_nicks.include?(username)
+        m.reply "User '#{username}' isn't registered with me :("
+        next
+      end
+
+      updated_item = connect_rally(username) do |rally|
+        rally.update(itype.singular, "FormattedID|#{item}", fields)
+      end
+
+      puts updated_item.inspect
+
+      # reply back that the task is completed
+      m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[itype.state]}"
+
+    # add time worked for a task
+    #
+    # optionally, this may not decrement the remaining hours on the task
     when /^task\s+(\w+)\s+hours\s+(\d+)(?:\s+(--no-todo))?/
       task = $1
       fields = {}
@@ -198,6 +239,8 @@ bot = Cinch::Bot.new do
 
       # reply back with new actuals
       m.reply "#{updated_task.FormattedID} has consumed #{updated_task.Actuals} hour(s) with #{updated_task.ToDo} remaining"
+
+    # supply the remaining hours for a task
     when /^task\s+(\w+)\s+todo\s+(\d+)/
       task = $1
       fields = {}
@@ -209,30 +252,17 @@ bot = Cinch::Bot.new do
 
       # reply back with new To Do hours
       m.reply "#{updated_task.FormattedID} has #{updated_task.ToDo} hours remaining"
-    when /^(\w+) (\w+) state (Defined|In-Progress|Completed)/
-      itype = $items.select{ |k,v| v.singular == $1 }.values.first
-      item = $2
-      fields = {}
-      fields[itype.state] = $3
-      puts "fields = #{fields.inspect}"
 
-      # make sure everything is ok before doing anything
-      unless registered_nicks.include?(username)
-        m.reply "User '#{username}' isn't registered with me :("
-        next
-      end
-
-      updated_item = connect_rally(username) do |rally|
-        rally.update(itype.singular, "FormattedID|#{item}", fields)
-      end
-
-      puts updated_item.inspect
-
-      # reply back that the task is completed
-      m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[itype.state]}"
+    # register with rallybot
+    #
+    # this is really just returning a link for where to get the api key
     when /^register/
       m.reply "Go to https://rally1.rallydev.com/login . Log in and click on the API Keys tab at the top of the page and generate a full access key."
       m.reply "then /msg #{ENV['RALLY_BOT_NAME']} confirm <rally email> <api key>"
+
+    # confirm registration with rallybot
+    #
+    # this is really just supplying your api key, which rallybot stores in the db
     when /^confirm (.*) (.*)/
       email = $1
       api_key = $2
@@ -240,6 +270,7 @@ bot = Cinch::Bot.new do
       m.reply "Registering #{username} as #{email}"
       register(username, email, api_key)
       m.reply "Done!"
+
     when /^quit\s*(\w*)/
       code = $1
       bot.quit if ENV['RALLY_BOT_QUIT_CODE'].eql?(code)
@@ -249,6 +280,7 @@ bot = Cinch::Bot.new do
       else
         m.reply "That is not the correct quit code required for this bot, sorry."
       end
+
     else
       usage(m)
     end
