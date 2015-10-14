@@ -15,6 +15,7 @@ def usage(msg)
   msg.reply '  (<number> months - display all matching items updated within this many months)'
   msg.reply "[#{$items.keys.join('|')}] <id> update name <...> - change the name of an item"
   msg.reply "[#{$items.values.map { |i| i.singular }.join('|')}] <id> state [Defined|In-Progress|Completed] - change the state of an item"
+  msg.reply "[#{$items.values.select { |i| i.singular != 'task' }.map { |i| i.singular }.join('|')}] <id> task add <...> - add a task to an item"
   msg.reply 'task <id> hours <number> (--no-todo) - add hours worked on a task and decrease the todo hours'
   msg.reply '  (with --no-todo, this will not the task\'s todo hours)'
   msg.reply 'task <id> todo <number> - specify total remaining hours for a task'

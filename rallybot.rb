@@ -210,6 +210,45 @@ bot = Cinch::Bot.new do
       # reply back that the task is completed
       m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[itype.state]}"
 
+    # add a task to an item
+    when /^(\w+) (\w+) task add (.*)/
+      itype = $items.select{ |k,v| v.singular == $1 }.values.first
+      item = $2
+      task_name = $3
+
+      # make sure everything is ok before doing anything
+      unless registered_nicks.include?(username)
+        m.reply "User '#{username}' isn't registered with me :("
+        next
+      end
+
+      task = connect_rally(username) do |rally|
+        # get the actual item from rally. this is needed to set up the task as a child of the item
+        result = rally.find do |q|
+          q.type = itype.singular
+          q.fetch = 'Name,FormattedID,Owner'
+          q.query_string = "(FormattedID = \"#{item}\")"
+        end
+
+        if result.count == 0
+          m.reply "#{itype.singular} #{item} can't be found :("
+        else
+          item = result.first
+
+          # get the rally user so we can assign the task to him/her
+          result = rally.find do |q|
+            q.type = 'User'
+            q.fetch = 'DisplayName,EmailAddress'
+            q.query_string = "(EmailAddress = \"#{identify(username)[:email]}\")"
+          end
+          user = result.first
+
+          task = rally.create('task', {'Name' => task_name, 'WorkProduct' => item, 'Owner' => user})
+
+          m.reply "Task #{task['FormattedID']} has been created"
+        end
+      end
+
     # add time worked for a task
     #
     # optionally, this may not decrement the remaining hours on the task
