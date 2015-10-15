@@ -181,18 +181,13 @@ bot = Cinch::Bot.new do
       end
 
     # update the name of the specified item
-    when /^(\w+)\s+(\w+)\s+update\s+name\s+(.*)/
+    when /^(#{$items.values.map { |i| i.singular }.join('|')})\s+(\w+)\s+update\s+name\s+(.*)/
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
       item = $2
       fields = {}
       fields[:Name] = $3
 
       # make sure everything is ok before doing anything
-      if itype.nil?
-        m.reply "I don't know what #{$1} is"
-        next
-      end
-
       unless registered_nicks.include?(username)
         m.reply "User '#{username}' isn't registered with me :("
         next
@@ -205,7 +200,7 @@ bot = Cinch::Bot.new do
       m.reply "#{item} is now named #{updated_item.Name}"
 
     # change the state of an item
-    when /^(\w+)\s+(\w+)\s+state\s+(Defined|In-Progress|Completed)/
+    when /^(#{$items.values.map { |i| i.singular }.join('|')})\s+(\w+)\s+state\s+(Defined|In-Progress|Completed)/
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
       item = $2
       fields = {}
@@ -225,7 +220,7 @@ bot = Cinch::Bot.new do
       m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[itype.state]}"
 
     # add a task to an item
-    when /^(\w+)\s+(\w+)\s+task\s+add\s+(.*)/
+    when /^(#{$items.values.select { |i| i.singular != 'task' }.map { |i| i.singular }.join('|')})\s+(\w+)\s+task\s+add\s+(.*)/
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
       item = $2
       task_name = $3
