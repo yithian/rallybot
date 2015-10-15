@@ -182,14 +182,14 @@ bot = Cinch::Bot.new do
 
     # update the name of the specified item
     when /^(\w+) (\w+) update name (.*)/
-      type_single = $s.to_sym
+      itype = $items.select{ |k,v| v.singular == $1 }.values.first
       item = $2
       fields = {}
       fields[:Name] = $3
 
       # make sure everything is ok before doing anything
-      unless $items.has_value?(type_single)
-        m.reply "I don't know what a #{type_single} is..."
+      if itype.nil?
+        m.reply "I don't know what #{$1} is"
         next
       end
 
@@ -199,7 +199,7 @@ bot = Cinch::Bot.new do
       end
 
       # update rally
-      updated_item = connect_rally(username) { |rally| rally.update(type_single, "FormattedID|#{item}", fields) }
+      updated_item = connect_rally(username) { |rally| rally.update(itype.singular, "FormattedID|#{item}", fields) }
 
       # reply back with success
       m.reply "#{item} is now named #{updated_item.Name}"
