@@ -65,7 +65,7 @@ bot = Cinch::Bot.new do
 
     # select a project from which to work
     # this shouldn't happen frequently
-    when /^select project/
+    when /^select\s+project/
       project = m.message.match(/^select project (.*)/)[1]
 
       unless registered_nicks.include?(username)
@@ -181,7 +181,7 @@ bot = Cinch::Bot.new do
       end
 
     # update the name of the specified item
-    when /^(\w+) (\w+) update name (.*)/
+    when /^(\w+)\s+(\w+)\s+update\s+name\s+(.*)/
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
       item = $2
       fields = {}
@@ -205,7 +205,7 @@ bot = Cinch::Bot.new do
       m.reply "#{item} is now named #{updated_item.Name}"
 
     # change the state of an item
-    when /^(\w+) (\w+) state (Defined|In-Progress|Completed)/
+    when /^(\w+)\s+(\w+)\s+state\s+(Defined|In-Progress|Completed)/
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
       item = $2
       fields = {}
@@ -227,7 +227,7 @@ bot = Cinch::Bot.new do
       m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[itype.state]}"
 
     # add a task to an item
-    when /^(\w+) (\w+) task add (.*)/
+    when /^(\w+)\s+(\w+)\s+task\s+add\s+(.*)/
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
       item = $2
       task_name = $3
@@ -317,7 +317,7 @@ bot = Cinch::Bot.new do
     # confirm registration with rallybot
     #
     # this is really just supplying your api key, which rallybot stores in the db
-    when /^confirm (.*) (.*)/
+    when /^confirm\s+(.*)\s+(.*)/
       email = $1
       api_key = $2
 
