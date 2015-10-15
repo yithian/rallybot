@@ -181,7 +181,7 @@ bot = Cinch::Bot.new do
       end
 
     # update the name of the specified item
-    when /^(#{$items.values.map { |i| i.singular }.join('|')})\s+(\w+)\s+update\s+name\s+(.*)/
+    when /^(#{$items.values.map { |i| i.singular }.join('|')})\s+(\w+)\s+name\s+(.*)/
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
       item = $2
       fields = {}
