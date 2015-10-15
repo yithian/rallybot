@@ -221,8 +221,6 @@ bot = Cinch::Bot.new do
         rally.update(itype.singular, "FormattedID|#{item}", fields)
       end
 
-      puts updated_item.inspect
-
       # reply back that the task is completed
       m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[itype.state]}"
 
