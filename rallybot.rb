@@ -328,8 +328,11 @@ bot = Cinch::Bot.new do
         m.reply "That is not the correct quit code required for this bot, sorry."
       end
 
-    else
+    when /help/
       usage(m)
+
+    else
+      m.reply "I don't know how to do that. Please type 'help' for usage."
     end
   end
 end
