@@ -94,10 +94,8 @@ bot = Cinch::Bot.new do
     # date
     # email
     # state
-    when /^list\s+(#{$items.keys.join('|')})(?:\s+(#{$states.keys.join('|')}))?(?:\s+(\d+)\s+months)?(?:\s+?(\w+@\w+\.\w+))?/
+    when /^list\s+(#{$items.keys.select { |i| i != :tasks }.join('|')})(?:\s+(#{$states.keys.join('|')}))?(?:\s+(\d+)\s+months)?(?:\s+?(\w+@\w+\.\w+))?/
       type_plural = $1.to_sym
-      id_length = 1
-      name_length = 1
       state = $2.to_sym if $2
       prev_date = $3 ? Date.today << $3.to_i : Date.today - 14
       time = DateTime.new(prev_date.year, prev_date.month, prev_date.day).strftime('%FT%T.%3NZ')
@@ -114,7 +112,7 @@ bot = Cinch::Bot.new do
         m.reply 'only Defects can be in a Closed state.'
         next
       elsif state == :completed and (type_plural != :tasks or type_plural != :stories)
-        m.reply 'only Stories and Tasks can be in a Completed state'
+        m.reply 'only Stories can be in a Completed state'
         next
       end
       item = $items[type_plural]
@@ -133,7 +131,7 @@ bot = Cinch::Bot.new do
       r = connect_rally(username) do |rally|
         rally.find do |q|
           q.type = item.singular
-          q.fetch = "FormattedID,Name,#{item.state}"
+          q.fetch = "FormattedID,Name,Tasks,#{item.state}"
           q.order = 'FormattedID Asc'
           q.project = {'_ref' => "/project/#{info[:project]}"} if info[:project]
 
@@ -161,10 +159,26 @@ bot = Cinch::Bot.new do
         next
       end
 
-      # reply with the user's items, if there are any
-      r.each { |thing| id_length = thing.FormattedID.length if thing.FormattedID.length > id_length }
-      r.each { |thing| name_length = thing.Name.length if thing.Name.length > name_length }
-      r.each { |thing| m.reply "#{thing.FormattedID.rjust(id_length)} : #{thing.Name.ljust(name_length)} : #{thing[item.state]}" }
+      # get some formatting information
+      r.each do |thing|
+        thing[:id_length] = 1
+        thing[:name_length] = 1
+
+        thing.Tasks.each do |task|
+          thing[:id_length] = task.FormattedID.length if task.FormattedID.length > thing[:id_length]
+          thing[:name_length] = task.Name.length if task.Name.length > thing[:name_length]
+        end
+      end
+
+      # actually reply with the user's items
+      r.each do |thing|
+        m.reply "#{thing.FormattedID} : #{thing.Name} : #{thing[item.state]}"
+
+        thing.Tasks.each do |task|
+          task.read
+          m.reply "  #{task.FormattedID.rjust(thing[:id_length])} : #{task.Name.ljust(thing[:name_length])} : #{task[$items[:tasks].state]}"
+        end
+      end
 
     # update the name of the specified item
     when /^(\w+) (\w+) update name (.*)/

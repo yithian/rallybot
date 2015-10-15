@@ -8,7 +8,7 @@ $login_collection = 'users'
 def usage(msg)
   msg.reply 'projects - list your projects'
   msg.reply 'select project <project name> - select a project on which to operate'
-  msg.reply "list [#{$items.keys.join('|')}] (<state>) (<number> months) (<email>) - list stuff assigned to you"
+  msg.reply "list [#{$items.keys.select { |i| i != :tasks }.join('|')}] (<state>) (<number> months) (<email>) - list stuff assigned to you"
   msg.reply '  (<state> - list items in the speicified state'
   msg.reply "     can be one of [#{$states.keys.join('|')}])"
   msg.reply '  (<email> - list stuff assigned to the specified user)'
