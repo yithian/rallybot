@@ -179,6 +179,27 @@ bot = Cinch::Bot.new do
         end
       end
 
+    # create an item
+    when /(#{$items.values.select { |i| i.singular != 'task' }.map { |i| i.singular }.join('|')})\s+create\s+(.+)/
+      itype = $items.select{ |k,v| v.singular == $1 }.values.first
+      fields = {}
+      fields[:Name] = $2
+
+      # make sure everything is ok before doing anything
+      unless registered_nicks.include?(username)
+        m.reply "User '#{username}' isn't registered with me :("
+        next
+      end
+
+      # actually create the new item
+      new_item = connect_rally(username) do |rally|
+        fields[:Owner] = rally_user(username, rally)
+
+        rally.create(itype.singular, fields)
+      end
+
+      m.reply "#{new_item.FormattedID} : #{new_item.Name} has been created"
+
     # update the name of the specified item
     when /^(#{$items.values.map { |i| i.singular }.join('|')})\s+(\w+)\s+name\s+(.*)/
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
