@@ -243,15 +243,7 @@ bot = Cinch::Bot.new do
         else
           item = result.first
 
-          # get the rally user so we can assign the task to him/her
-          result = rally.find do |q|
-            q.type = 'User'
-            q.fetch = 'DisplayName,EmailAddress'
-            q.query_string = "(EmailAddress = \"#{identify(username)[:email]}\")"
-          end
-          user = result.first
-
-          task = rally.create('task', {'Name' => task_name, 'WorkProduct' => item, 'Owner' => user})
+          task = rally.create('task', {'Name' => task_name, 'WorkProduct' => item, 'Owner' => rally_user(username, rally)})
 
           m.reply "Task #{task['FormattedID']} has been created"
         end

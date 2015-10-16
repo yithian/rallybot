@@ -78,6 +78,18 @@ def select_project(nick, proj_id)
   end
 end
 
+# return the rally user for an irc nick
+def rally_user(nick, rally)
+  rally = connect_rally(nick) unless rally
+
+  result = rally.find do |q|
+    q.type = 'User'
+    q.fetch = 'DisplayName,EmailAddress'
+    q.query_string = "(EmailAddress = \"#{identify(nick)[:email]}\")"
+  end
+  result.first
+end
+
 # given a nick, grab the stored email, project and api key from the db
 def identify(nick)
   db_connect do |db|
