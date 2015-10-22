@@ -220,11 +220,11 @@ bot = Cinch::Bot.new do
       m.reply "#{item} is now named #{updated_item.Name}"
 
     # change the state of an item
-    when /^(#{$items.values.map { |i| i.singular }.join('|')})\s+(\w+)\s+state\s+(Defined|In-Progress|Completed)/
+    when /^(#{$items.values.map { |i| i.singular }.join('|')})\s+(\w+)\s+state\s+(defined|in-progress|completed)/
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
       item = $2
       fields = {}
-      fields[itype.state] = $3
+      fields[itype.state] = $states[$3.to_sym]
 
       # make sure everything is ok before doing anything
       unless registered_nicks.include?(username)
