@@ -184,6 +184,7 @@ bot = Cinch::Bot.new do
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
       fields = {}
       fields[:Name] = $2
+      fields[:Project] = info[:project]
 
       # make sure everything is ok before doing anything
       unless registered_nicks.include?(username)
