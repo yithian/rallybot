@@ -34,6 +34,7 @@ bot = Cinch::Bot.new do
 
   on :private do |m|
     username = parse_nick(m.user.nick)
+    info = identify(username)
 
     case m.message
 
@@ -121,7 +122,6 @@ bot = Cinch::Bot.new do
         m.reply "User '#{username}' isn't registered with me :("
         next
       end
-      info = identify(username)
 
       # if an email address is provided, use that. otherwise, use the email of
       # the (registered) user talking to the bot
