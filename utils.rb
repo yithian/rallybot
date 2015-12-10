@@ -7,7 +7,7 @@ $project_collection = 'projects'
 def usage(msg)
   msg.reply 'projects - list your projects'
   msg.reply 'project <project name> - select a project on which to operate'
-  msg.reply 'project <project name> custom state <state name> - define a custom state field to use on items in a project'
+  msg.reply 'custom state <state name> - define a custom state field to use on items in a project'
   msg.reply "list [#{$items.keys.select { |i| i != :tasks }.join('|')}] (--months <number>) (--email <email>) (<state>)- list stuff assigned to you"
   msg.reply '  (--months <number> - display all matching items updated within this many months)'
   msg.reply '  (--email <email> - list stuff assigned to the specified user)'
