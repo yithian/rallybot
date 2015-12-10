@@ -72,10 +72,7 @@ end
 # update a user's preferred project
 def select_project(nick, proj_id)
   db_connect do |db|
-    u = db[$login_collection].find_one({_id: nick})
-    u['project'] = proj_id
-
-    db[$login_collection].update({_id: nick}, u, {:upsert => true})
+    db[$login_collection].find({_id: nick}).limit(1).update_one({'$set' => {project: proj_id}}, {upsert: true})
   end
 end
 
