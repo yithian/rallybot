@@ -253,7 +253,7 @@ bot = Cinch::Bot.new do
           # reply back that the task is completed
           m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[actual_item_state]}"
         rescue Exception => e
-          allowed = rally.allowed_values(itype.singular, "c_#{actual_item_state}").keys
+          allowed = rally.allowed_values(itype.singular, "#{actual_item_state == itype.state ? '' : 'c_'}#{actual_item_state}").keys
           allowed = allowed - ['Null']
 
           # reply back with allowed values
