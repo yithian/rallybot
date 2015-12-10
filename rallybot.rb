@@ -88,18 +88,26 @@ bot = Cinch::Bot.new do
       select_project(username, project_id)
       m.reply "you are now operating on #{project}"
 
+    # tell rallybot to use a custom state field for items in the current project
+    when /custom\s+state\s+(\w*)/
+      custom_state = $1
+
+      store_custom_state(info[:project], custom_state)
+
+      m.reply "your current project will now use #{custom_state(info[:project])} as its state"
+
     # list items of the specified type
     #
     # this can be filtered by:
     # date
     # email
     # state
-    when /^list\s+(#{$items.keys.select { |i| i != :tasks }.join('|')})(?:\s+(#{$states.keys.join('|')}))?(?:\s+(\d+)\s+months)?(?:\s+?(\w+@\w+\.\w+))?/
+    when /^list\s+(#{$items.keys.select { |i| i != :tasks }.join('|')})(?:\s+--months\s+(\d+))?(?:\s+--email\s+?(\w+@\w+\.\w+))?(?:\s+(.*))?$/
       type_plural = $1.to_sym
-      state = $2.to_sym if $2
-      prev_date = $3 ? Date.today << $3.to_i : Date.today - 14
+      prev_date = $2 ? Date.today << $2.to_i : Date.today - 14
       time = DateTime.new(prev_date.year, prev_date.month, prev_date.day).strftime('%FT%T.%3NZ')
-      email = $4
+      email = $3
+      state = $4.to_sym if $4
 
       # make sure everything is ok before doing anything
       unless $items.include?(type_plural)
@@ -126,20 +134,22 @@ bot = Cinch::Bot.new do
       # the (registered) user talking to the bot
       items_for = email ? email : info[:email]
 
+      actual_item_state = custom_state(info[:project]) || item.state
+
       # query rally
       r = connect_rally(username) do |rally|
         rally.find do |q|
           q.type = item.singular
-          q.fetch = "FormattedID,Name,Tasks,#{item.state},TaskIndex,#{$items[:tasks].state}"
+          q.fetch = "FormattedID,Name,Tasks,#{actual_item_state},TaskIndex,#{$items[:tasks].state}"
           q.order = 'FormattedID Asc'
           q.project = {'_ref' => "/project/#{info[:project]}"} if info[:project]
 
           q.query_string = "(((Owner.Name = #{items_for})"
           # add type-specific state query (if needed)
           if state
-            q.query_string << " and (#{item.state} = #{$states[state]})"
+            q.query_string << " and (#{actual_item_state} = \"#{state}\")"
           else
-            q.query_string << " and (#{item.state} < #{item.closed})"
+            q.query_string << " and (#{actual_item_state} < #{item.closed})"
           end
           # add time query
           q.query_string << ") and (LastUpdateDate > #{time})"
@@ -171,7 +181,7 @@ bot = Cinch::Bot.new do
 
       # actually reply with the user's items
       r.each do |thing|
-        m.reply "#{thing.FormattedID} : #{thing.Name} : #{thing[item.state]}"
+        m.reply "#{thing.FormattedID} : #{thing.Name} : #{thing[actual_item_state]}"
 
         thing.Tasks.sort_by { |t| t.TaskIndex }.each do |task|
           m.reply "  #{task.FormattedID.rjust(thing[:id_length])} : #{task.Name.ljust(thing[:name_length])} : #{task[$items[:tasks].state]}"
@@ -220,11 +230,10 @@ bot = Cinch::Bot.new do
       m.reply "#{item} is now named #{updated_item.Name}"
 
     # change the state of an item
-    when /^(#{$items.values.map { |i| i.singular }.join('|')})\s+(\w+)\s+state\s+(defined|in-progress|completed)/
+    when /^(#{$items.values.map { |i| i.singular }.join('|')})\s+(\w+)\s+state\s+(.*)/
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
       item = $2
-      fields = {}
-      fields[itype.state] = $states[$3.to_sym]
+      state = $3
 
       # make sure everything is ok before doing anything
       unless registered_nicks.include?(username)
@@ -232,12 +241,25 @@ bot = Cinch::Bot.new do
         next
       end
 
-      updated_item = connect_rally(username) do |rally|
-        rally.update(itype.singular, "FormattedID|#{item}", fields)
-      end
+      actual_item_state = custom_state(info[:project]) || itype.state
 
-      # reply back that the task is completed
-      m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[itype.state]}"
+      connect_rally(username) do |rally|
+        fields = {}
+        fields[actual_item_state] = state
+
+        begin
+          updated_item = rally.update(itype.singular, "FormattedID|#{item}", fields)
+
+          # reply back that the task is completed
+          m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[actual_item_state]}"
+        rescue Exception => e
+          allowed = rally.allowed_values(itype.singular, "c_#{actual_item_state}").keys
+          allowed = allowed - ['Null']
+
+          # reply back with allowed values
+          m.reply "allowed values for #{actual_item_state} are: #{allowed.join(', ')}"
+        end
+      end
 
     # add a task to an item
     when /^(#{$items.values.select { |i| i.singular != 'task' }.map { |i| i.singular }.join('|')})\s+(\w+)\s+task\s+add\s+(.*)/

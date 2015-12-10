@@ -2,18 +2,19 @@ require 'rally_api'
 require 'mongo'
 
 $login_collection = 'users'
+$project_collection = 'projects'
 
 def usage(msg)
   msg.reply 'projects - list your projects'
-  msg.reply 'select project <project name> - select a project on which to operate'
-  msg.reply "list [#{$items.keys.select { |i| i != :tasks }.join('|')}] (<state>) (<number> months) (<email>) - list stuff assigned to you"
-  msg.reply '  (<state> - list items in the speicified state'
-  msg.reply "     can be one of [#{$states.keys.join('|')}])"
-  msg.reply '  (<email> - list stuff assigned to the specified user)'
-  msg.reply '  (<number> months - display all matching items updated within this many months)'
+  msg.reply 'project <project name> - select a project on which to operate'
+  msg.reply 'project <project name> custom state <state name> - define a custom state field to use on items in a project'
+  msg.reply "list [#{$items.keys.select { |i| i != :tasks }.join('|')}] (--months <number>) (--email <email>) (<state>)- list stuff assigned to you"
+  msg.reply '  (--months <number> - display all matching items updated within this many months)'
+  msg.reply '  (--email <email> - list stuff assigned to the specified user)'
+  msg.reply '  (<state> - list items in the speicified state)'
   msg.reply "[#{$items.values.select { |i| i.singular != 'task' }.map { |i| i.singular }.join('|')}] create <...> - create an item"
   msg.reply "[#{$items.values.map { |i| i.singular }.join('|')}] <id> name <...> - change the name of an item"
-  msg.reply "[#{$items.values.map { |i| i.singular }.join('|')}] <id> state [defined|in-progress|completed] - change the state of an item"
+  msg.reply "[#{$items.values.map { |i| i.singular }.join('|')}] <id> state <state> - change the state of an item"
   msg.reply "[#{$items.values.select { |i| i.singular != 'task' }.map { |i| i.singular }.join('|')}] <id> task add <...> - add a task to an item"
   msg.reply 'task <id> hours <number> (--no-todo) - add hours worked on a task and decrease the todo hours'
   msg.reply '  (with --no-todo, this will not the task\'s todo hours)'
@@ -75,6 +76,23 @@ def select_project(nick, proj_id)
     u['project'] = proj_id
 
     db[$login_collection].update({_id: nick}, u, {:upsert => true})
+  end
+end
+
+# store a project id / custom state name pair in the db
+def store_custom_state(proj_id, state_name)
+  db_connect do |db|
+    db.database[$project_collection].create unless db.database.collection_names.include?($project_collection)
+    db[$project_collection].find({_id: proj_id}).limit(1).update_one({'$set' => {custom_state: state_name}}, {upsert: true})
+  end
+end
+
+# return the custom state for a project id, if any
+# otherwise return nil
+def custom_state(proj_id)
+  db_connect do |db|
+    db.database[$project_collection].create unless db.database.collection_names.include?($project_collection)
+    db[$project_collection].find({_id: proj_id}).limit(1).first[:custom_state]
   end
 end
 
