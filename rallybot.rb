@@ -65,9 +65,8 @@ bot = Cinch::Bot.new do
       end
 
     # select a project from which to work
-    # this shouldn't happen frequently
-    when /^select\s+project/
-      project = m.message.match(/^select project (.*)/)[1]
+    when /^project\s+(.*)/
+      project = $1
 
       unless registered_nicks.include?(username)
         m.reply "User '#{username}' isn't registered with me :("
