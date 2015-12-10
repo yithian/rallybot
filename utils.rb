@@ -1,8 +1,6 @@
 require 'rally_api'
 require 'mongo'
 
-include Mongo
-
 $login_collection = 'users'
 
 def usage(msg)
@@ -50,12 +48,13 @@ end
 
 # provide an authenticated connection to the openshift mongo db
 def db_connect(&block)
-  con = MongoClient.new(ENV['OPENSHIFT_MONGODB_DB_HOST'], ENV['OPENSHIFT_MONGODB_DB_PORT'])
-  db = con.db(ENV['OPENSHIFT_APP_NAME'])
-  db.authenticate(ENV['OPENSHIFT_MONGODB_DB_USERNAME'], ENV['OPENSHIFT_MONGODB_DB_PASSWORD'])
+  db = Mongo::Client.new(["#{ENV['OPENSHIFT_MONGODB_DB_HOST']}:#{ENV['OPENSHIFT_MONGODB_DB_PORT']}"],
+                         database: ENV['OPENSHIFT_APP_NAME'],
+                         user: ENV['OPENSHIFT_MONGODB_DB_USERNAME'],
+                         password: ENV['OPENSHIFT_MONGODB_DB_PASSWORD'])
   if block
     result = yield db
-    con.close
+    db.close
     result
   else
     db
@@ -93,10 +92,14 @@ end
 
 # given a nick, grab the stored email, project and api key from the db
 def identify(nick)
+  doc = {}
   db_connect do |db|
-    doc = db[$login_collection].find_one({_id: parse_nick(nick)})
-    {email: doc['email'], project: doc['project'], key: doc['key']} if doc
+    db[$login_collection].find({_id: parse_nick(nick)}).limit(1).each do |d|
+      doc = {email: d['email'], project: d['project'], key: d['key']}
+    end
   end
+
+  doc
 end
 
 # provide a connection to rally via a stored api key
