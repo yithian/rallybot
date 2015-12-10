@@ -89,7 +89,13 @@ end
 def custom_state(proj_id)
   db_connect do |db|
     db.database[$project_collection].create unless db.database.collection_names.include?($project_collection)
-    db[$project_collection].find({_id: proj_id}).limit(1).first[:custom_state]
+
+    r = db[$project_collection].find({_id: proj_id}).limit(1)
+    if r.count > 0
+      r.first[:custom_state]
+    else
+      nil
+    end
   end
 end
 
