@@ -64,7 +64,7 @@ end
 # store a nick/email/login in the db
 def register(nick, email, key)
   db_connect do |db|
-    db[$login_collection].update({_id: nick}, {_id: nick, email: email, key: key}, {:upsert => true})
+    db[$login_collection].find({_id: nick}).limit(1).update_one({'$set' => {_id: nick, email: email, key: key}}, {:upsert => true})
   end
 end
 
