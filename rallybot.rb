@@ -140,7 +140,7 @@ bot = Cinch::Bot.new do
       r = connect_rally(username) do |rally|
         rally.find do |q|
           q.type = item.singular
-          q.fetch = "FormattedID,Name,Tasks,#{actual_item_state},TaskIndex,#{$items[:tasks].state}"
+          q.fetch = "FormattedID,Name,Ready,Tasks,#{actual_item_state},TaskIndex,#{$items[:tasks].state}"
           q.order = 'FormattedID Asc'
           q.project = {'_ref' => "/project/#{info[:project]}"} if info[:project]
 
@@ -181,7 +181,7 @@ bot = Cinch::Bot.new do
 
       # actually reply with the user's items
       r.each do |thing|
-        m.reply "#{thing.FormattedID} : #{thing.Name} : #{thing[actual_item_state]}"
+        m.reply "#{thing.FormattedID} : #{thing.Name} : #{thing[actual_item_state]} :#{' not' unless thing.Ready} ready"
 
         thing.Tasks.sort_by { |t| t.TaskIndex }.each do |task|
           m.reply "  #{task.FormattedID.rjust(thing[:id_length])} : #{task.Name.ljust(thing[:name_length])} : #{task[$items[:tasks].state]}"
