@@ -261,6 +261,25 @@ bot = Cinch::Bot.new do
         end
       end
 
+    # mark an item as (not) ready to pull
+    when /(#{$items.values.select { |i| i.singular != 'task' }.map { |i| i.singular }.join('|')})\s+(\w+)(?:\s+(not))?\s+ready/
+      itype = $items.select{ |k,v| v.singular == $1 }.values.first
+      item = $2
+      ready = $3.nil?
+
+      # make sure everything is ok before doing anything
+      unless registered_nicks.include?(username)
+        m.reply "User '#{username}' isn't registered with me :("
+        next
+      end
+
+      updated_item = connect_rally(username) do |rally|
+        rally.update(itype.singular, "FormattedID|#{item}", {'Ready' => ready})
+      end
+
+      # reply back that all's well
+      m.reply "#{updated_item.FormattedID} is now#{' not' unless updated_item.Ready} ready to pull"
+
     # add a task to an item
     when /^(#{$items.values.select { |i| i.singular != 'task' }.map { |i| i.singular }.join('|')})\s+(\w+)\s+task\s+add\s+(.*)/
       itype = $items.select{ |k,v| v.singular == $1 }.values.first
