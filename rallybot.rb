@@ -137,7 +137,20 @@ bot = Cinch::Bot.new do
       actual_item_state = custom_state(info[:project]) || item.state
 
       # query rally
+      proj_name = ''
+
       r = connect_rally(username) do |rally|
+        # get the project name for output
+        if info[:project]
+          p = rally.find do |q|
+            q.type = 'Project'
+            q.fetch = 'Name'
+            q.query_string = "(ObjectID = \"#{info[:project]}\")"
+          end
+          proj_name = p[0]['Name']
+        end
+
+        # query for the items
         rally.find do |q|
           q.type = item.singular
           q.fetch = "FormattedID,Name,Ready,Tasks,#{actual_item_state},TaskIndex,#{$items[:tasks].state}"
@@ -180,6 +193,7 @@ bot = Cinch::Bot.new do
       end
 
       # actually reply with the user's items
+      m.reply proj_name unless proj_name.empty?
       r.each do |thing|
         m.reply "#{thing.FormattedID} : #{thing.Name} : #{thing[actual_item_state]} :#{' not' unless thing.Ready} ready"
 
