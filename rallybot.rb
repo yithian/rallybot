@@ -260,6 +260,7 @@ bot = Cinch::Bot.new do
       connect_rally(username) do |rally|
         fields = {}
         fields[actual_item_state] = state
+        fields['Ready'] = false
 
         begin
           updated_item = rally.update(itype.singular, "FormattedID|#{item}", fields)
