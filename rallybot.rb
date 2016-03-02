@@ -138,6 +138,7 @@ bot = Cinch::Bot.new do
 
       # query rally
       proj_name = ''
+      allowed = []
 
       r = connect_rally(username) do |rally|
         # get the project name for output
@@ -150,11 +151,14 @@ bot = Cinch::Bot.new do
           proj_name = p[0]['Name']
         end
 
+        # need the allowed values for the item so we can sorty by them
+        allowed = rally.allowed_values(item.singular, "#{actual_item_state == item.state ? '' : 'c_'}#{actual_item_state}").keys
+        allowed = allowed - ['Null']
+
         # query for the items
         rally.find do |q|
           q.type = item.singular
           q.fetch = "FormattedID,Name,Ready,Tasks,#{actual_item_state},TaskIndex,#{$items[:tasks].state}"
-          q.order = 'FormattedID Asc'
           q.project = {'_ref' => "/project/#{info[:project]}"} if info[:project]
 
           q.query_string = "(((Owner.Name = #{items_for})"
@@ -172,6 +176,7 @@ bot = Cinch::Bot.new do
           # (((Owner.name = email@address.tld) and (State < Closed)) and (LastUpdateDate > 2014-09-18T19:39:14.026Z))
         end
       end
+      r = r.to_a
 
       if r.empty?
         response = "User \"#{items_for}\" has no"
@@ -180,6 +185,12 @@ bot = Cinch::Bot.new do
         m.reply response
         next
       end
+
+      # sort the items based on the order of the allowed states
+      # this depends on rally returning the allowed states in the correct order!
+      ordered_allowed = {}
+      allowed.reverse!.each_index { |i| ordered_allowed[allowed[i]] = i } # creates a hash of {state: order} pairs
+      r.sort! { |a, b| ordered_allowed[a[actual_item_state]] <=> ordered_allowed[b[actual_item_state]] }
 
       # get some formatting information
       r.each do |thing|
