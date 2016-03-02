@@ -281,6 +281,7 @@ bot = Cinch::Bot.new do
 
         begin
           updated_item = rally.update(itype.singular, "FormattedID|#{item}", fields)
+          updated_item.rank_to_bottom
 
           # reply back that the task is completed
           m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[actual_item_state]}"
