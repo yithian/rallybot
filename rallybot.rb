@@ -190,7 +190,13 @@ bot = Cinch::Bot.new do
       # this depends on rally returning the allowed states in the correct order!
       ordered_allowed = {}
       allowed.reverse!.each_index { |i| ordered_allowed[allowed[i]] = i } # creates a hash of {state: order} pairs
-      r.sort! { |a, b| ordered_allowed[a[actual_item_state]] <=> ordered_allowed[b[actual_item_state]] }
+      r.sort! do |a, b|
+        if ordered_allowed[a[actual_item_state]] == ordered_allowed[b[actual_item_state]]
+          a.DragAndDropRank <=> b.DragAndDropRank
+        else
+          ordered_allowed[a[actual_item_state]] <=> ordered_allowed[b[actual_item_state]]
+        end
+      end
 
       # get some formatting information
       r.each do |thing|
