@@ -166,7 +166,7 @@ bot = Cinch::Bot.new do
           if state
             q.query_string << " and (#{actual_item_state} = \"#{state}\")"
           else
-            q.query_string << " and (#{actual_item_state} < #{item.closed})"
+            q.query_string << " and (#{actual_item_state} < \"#{allowed.last}\")"
           end
           # add time query
           q.query_string << ") and (LastUpdateDate > #{time})"
