@@ -160,6 +160,7 @@ bot = Cinch::Bot.new do
           q.type = item.singular
           q.fetch = "FormattedID,Name,Ready,Tasks,#{actual_item_state},TaskIndex,#{$items[:tasks].state},DragAndDropRank"
           q.project = {'_ref' => "/project/#{info[:project]}"} if info[:project]
+          q.project_scope_down = true
 
           q.query_string = "(((Owner.Name = #{items_for})"
           # add type-specific state query (if needed)
