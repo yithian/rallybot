@@ -283,11 +283,11 @@ bot = Cinch::Bot.new do
       connect_rally(username) do |rally|
         fields = {}
         fields[actual_item_state] = state
-        fields['Ready'] = false unless itype == $items[:task]
+        fields['Ready'] = false unless itype == $items[:tasks]
 
         begin
           updated_item = rally.update(itype.singular, "FormattedID|#{item}", fields)
-          updated_item.rank_to_bottom unless itype == $items[:task]
+          updated_item.rank_to_bottom unless itype == $items[:tasks]
 
           # reply back that the task is completed
           m.reply "#{updated_item.FormattedID} is now marked as #{updated_item[actual_item_state]}"
