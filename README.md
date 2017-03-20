@@ -29,8 +29,6 @@ rallybot relies on the following environment variables:
 * RALLY_BOT_CHANNEL: comma-separated list of channels rallybot should hang out in (this is mostly just a reminder for folks that it exists)
 * RALLY_BOT_NAME: irc nick for rallybot
 * RALLY_BOT_WORKSPACE: name of the workspace rally should operate in
-* OPENSHIFT_MONGODB_DB_USERNAME: mongodb username
-* OPENSHIFT_MONGODB_DB_PASSWORD: mongodb password
-* OPENSHIFT_MONGODB_DB_HOST: mongodb hostname
-* OPENSHIFT_MONGODB_DB_PORT: mongodb port
-* OPENSHIFT_APP_NAME: mongodb database
+* MONGODB_USER: mongodb username
+* MONGODB_PASSWORD: mongodb password
+* MONGODB_DATABASE: mongodb database
