@@ -51,7 +51,7 @@ end
 # provide an authenticated connection to the openshift mongo db
 def db_connect(&block)
   db = Mongo::Client.new(["localhost:27017"],
-                         database: ENV['MONGODB_DATABASE'],
+                         database: 'rallybot',
                          user: ENV['MONGODB_USER'],
                          password: ENV['MONGODB_PASSWORD'])
   if block
