@@ -18,7 +18,7 @@ DEPENDENCIES
   bson_ext
   cinch
   json
-  mongo (~> 2.1)
+  mongo
   rally_api
 
 BUNDLED WITH
